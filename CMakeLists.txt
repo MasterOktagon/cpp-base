@@ -19,6 +19,7 @@ file(GLOB_RECURSE SRC "src/*")
 # exectuable
 
 add_executable ( ${ExecutableName} ${SRC})
+set_target_properties(${ExecutableName} PROPERTIES LINKER_LANGUAGE CXX)
 
 # Enable Debug mode if required
 
@@ -49,6 +50,7 @@ endif()
 # Tests
 
 set(TestName "${ExecutableName}-tests")
+set_target_properties(${TestName} PROPERTIES LINKER_LANGUAGE CXX)
 find_package(Catch2)
 if (${Catch2_FOUND})
     # for tests no main file
