@@ -29,10 +29,10 @@ if ( NOT "${CMAKE_BUILD_TYPE}" )
 endif()
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     message(STATUS "Building in Debug mode...")
-    target_compile_options(${ExecutableName} PRIVATE -DDEBUG_ON -g -ggdb -W -Wall -Wextra -Wno-literal-suffix -Wno-unused-parameter -fstrict-enums)
+    target_compile_options(${ExecutableName} PRIVATE -DDEBUG_ON -g -ggdb -W -Wall -Wextra -Wno-unused-parameter -fstrict-enums)
 else()
     message(STATUS "Building in Release mode...")
-    target_compile_options(${ExecutableName} PRIVATE -g -W -Wall -Wextra -Wno-literal-suffix -Wno-unused-parameter -ffold-simple-inlines -fstrict-enums)
+    target_compile_options(${ExecutableName} PRIVATE -g -W -Wall -Wextra -Wno-unused-parameter -ffold-simple-inlines -fstrict-enums)
 endif()
 
 # Stacktrace on segfault
