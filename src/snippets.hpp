@@ -25,12 +25,12 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 #include <sys/types.h>
 // integer/float types names
-typedef __U8_TYPE  uint8;
+typedef __UINT8_TYPE__ uint8;
 typedef __U16_TYPE uint16;
 typedef __U32_TYPE uint32;
 typedef __U64_TYPE uint64;
 
-typedef __S8_TYPE int8;
+typedef __INT8_TYPE__ int8;
 typedef __S16_TYPE int16;
 typedef __S32_TYPE int32;
 typedef __S64_TYPE int64;
