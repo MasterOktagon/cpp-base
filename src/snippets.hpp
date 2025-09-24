@@ -58,8 +58,8 @@ inline std::string operator ""_s (const char* c, usize){
     #define CONCAT(a, b) CONCAT2(a, b)
     
     // define all needed macros to be unused functions
-    #define TEST_CASE(a, b) [[unused]] void CONCAT(_test_case_,__COUNTER__) (const char* _a=a, const char* _b=b)
-    #define TEMPLATE_TEST_CASE(a,b, ...) [[unused]] CONCAT(_test_case_,__COUNTER__) (const char* a, const char* b, __VA_ARGS__)
+    #define TEST_CASE(a, b) [[unused]] void CONCAT(_test_case_,CONCAT(__COUNTER__, CONCAT(_, __LINE__))) (const char* _a=a, const char* _b=b)
+    #define TEMPLATE_TEST_CASE(a,b, ...) [[unused]] CONCAT(_test_case_,CONCAT(__COUNTER__, CONCAT(_, __LINE__))) (const char* a, const char* b, __VA_ARGS__)
     #define REQUIRE(a)
     #define BENCHMARK(a)
     #define SECTION(a)
