@@ -18,14 +18,11 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 */
 
 #ifdef ENABLE_DEBUG
+    #ifndef DEBUG_LVL
+        #define DEBUG_LVL -1
+    #endif
     #include <iostream>
-    #define DEBUG(lvl, msg)   \
-        #ifndef DEBUG_LVL     \
-            #define DEBUG_LVL -1 \
-        #endif \
-        #if DEBUG_LVL == -1 || DEBUG_LVL >= lvl \
-            std::cout << "\e[35;1m[DEBUG]\e[0m\e[1m @ " << __FILE__ << ":" << __LINE__ << " : \e[0m" << msg << std::endl; \
-        #endif
+    #define DEBUG(lvl, msg) if(DEBUG_LVL == -1 || DEBUG_LVL >= lvl) std::cout << "\e[35;1m[DEBUG]\e[0m\e[1m @ " << __FILE__ << ":" << __LINE__ << " : \e[0m" << msg << std::endl;
 #else
     #define DEBUG(lvl, msg)
 #endif
