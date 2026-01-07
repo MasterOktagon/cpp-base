@@ -16,6 +16,10 @@ set(CXX g++)
 
 file(GLOB_RECURSE SRC "src/*")
 
+if (EXISTS "./lib/tracy")
+    list(APPEND SRC lib/tracy/public/TracyClient.cpp) # add tracy
+endif()
+
 # exectuable
 
 add_executable ( ${ExecutableName} ${SRC})
@@ -29,7 +33,10 @@ if ( NOT "${CMAKE_BUILD_TYPE}" )
 endif()
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     message(STATUS "Building in Debug mode...")
-    target_compile_options(${ExecutableName} PRIVATE -DENABLE_DEBUG -g -ggdb -W -Wall -Wextra -Wno-unused-parameter -fstrict-enums)
+    target_compile_options(${ExecutableName} PRIVATE -DENABLE_DEBUG -DTRACY_ENABLE -g -ggdb -W -Wall -Wextra -Wno-unused-parameter -fstrict-enums)
+elseif(${CMAKE_BUILD_TYPE} STREQUAL "Profiling")
+    message(STATUS "Building in Profiling mode...")
+    target_compile_options(${ExecutableName} PRIVATE -DTRACY_ENABLE -g -ggdb -W -Wall -Wextra -Wno-unused-parameter -ffold-simple-inlines -fstrict-enums)
 else()
     message(STATUS "Building in Release mode...")
     target_compile_options(${ExecutableName} PRIVATE -g -W -Wall -Wextra -Wno-unused-parameter -ffold-simple-inlines -fstrict-enums)
@@ -40,11 +47,33 @@ endif()
 if (EXISTS "./lib/backward-cpp")
     add_subdirectory("./lib/backward-cpp")
     message(STATUS "optional dependency backward-cpp found")
+    
+    # libdl is required for tracy client
+    target_link_libraries(${ExecutableName} PUBLIC ${CMAKE_DL_LIBS})
+    
+    # libpthread too
+    find_package(Threads REQUIRED)
+    target_link_libraries(${ExecutableName} PUBLIC Threads::Threads)
 
     # Add Backward to target (NOTE: either Backward::Interface, Backward::Object, or Backward::Backward)
     target_link_libraries(${ExecutableName} PUBLIC Backward::Interface)
 else()
     message(STATUS "optional dependency backward-cpp not found - disabling stacktrace")
+endif()
+
+# Profiling
+
+if (EXISTS "./lib/tracy")
+    # available options : TRACY_ENABLE , TRACY_LTO , TRACY_ON_DEMAND , TRACY_NO_BROADCAST , TRACY_NO_CODE_TRANSFER , ...
+    option ( TRACY_ENABLE " " ON )
+    option ( TRACY_ON_DEMAND " " ON )
+    add_subdirectory (lib/tracy) # target : TracyClient or alias Tracy :: TracyClient
+    
+    message(STATUS "optional dependency tracy found")
+    
+    target_link_libraries(${ExecutableName} PUBLIC Tracy::TracyClient)
+else()
+    message(STATUS "optional dependency tracy not found - disabling profiling")
 endif()
 
 # Tests
@@ -54,18 +83,28 @@ find_package(Catch2)
 if (${Catch2_FOUND})
     # for tests no main file
     list(REMOVE_ITEM SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
-    add_executable(${TestName} ${SRC})
-    target_compile_options(${TestName} PRIVATE -g -ggdb -DCATCH2 -DCATCH2_VERSION=${Catch2_VERSION_MAJOR} -Wno-literal-suffix -Wno-unused-parameter -fstrict-enums)
+
+    add_custom_command(
+        OUTPUT build/doctests.cpp
+        DEPENDS ${SRC} src/main.cpp
+        COMMENT "collecting doc tests..."
+        COMMAND "python3" ARGS generate_doc_tests.py build/doctests.cpp ${SRC};src/main.cpp
+    )
+
+    add_executable(${TestName} ${SRC} build/doctests.cpp)
+    target_compile_options(${TestName} PRIVATE -g -ggdb -DCATCH2 -DCATCH2_VERSION=${Catch2_VERSION_MAJOR} -fstrict-enums)
     # NOTE: for tests no compiler warnings are required, since these will be emitted by the main file already
     target_link_libraries(${TestName} PRIVATE Catch2::Catch2WithMain)
 
     # run tests
 
-    add_custom_command(TARGET ${TestName}
-        POST_BUILD
-        COMMENT "Running tests..."
-        COMMAND $<TARGET_FILE:${TestName}>
-    )
+    if (NOT (${CMAKE_BUILD_TYPE} STREQUAL "Tests"))
+        add_custom_command(TARGET ${TestName}
+            POST_BUILD
+            COMMENT "Running tests..."
+            COMMAND $<TARGET_FILE:${TestName}>
+        )
+    endif()
     
 else()
     message(WARNING "Testing disabled - Catch2 not found!")
@@ -78,7 +117,9 @@ list(FILTER SRC EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/src/backward(\.cpp|\.
 
 find_package(Doxygen)
 set(DOXYGEN_GENERATE_HTML YES)
-set(DOXYGEN_GENERATE_MAN YES)
+# Set to true for man pages
+#set(DOXYGEN_GENERATE_MAN YES)
+set(DOXYGEN_QUIET YES)
 doxygen_add_docs(
         "docs"
         ${SRC}
