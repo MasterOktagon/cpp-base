@@ -42,6 +42,18 @@ else()
     target_compile_options(${ExecutableName} PRIVATE -g -W -Wall -Wextra -Wno-unused-parameter -ffold-simple-inlines -fstrict-enums)
 endif()
 
+find_program(CLANG_TIDY "clang-tidy")
+if(CLANG_TIDY)
+    message(STATUS "clang-tidy found: ${CLANG_TIDY}")
+    add_custom_command(TARGET ${ExecutableName}
+        PRE_BUILD
+        COMMENT "running clang-tidy checks..."
+        COMMAND clang-tidy ARGS ${SRC}
+    )
+else()
+    message(WARNING "clang-tidy not found!")
+endif()
+
 # Stacktrace on segfault
 
 if (EXISTS "./lib/backward-cpp")
