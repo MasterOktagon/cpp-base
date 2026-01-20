@@ -10,7 +10,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CXX g++)
 
 # add files in src folder
 
@@ -25,6 +24,25 @@ endif()
 add_executable ( ${ExecutableName} ${SRC})
 set_target_properties(${ExecutableName} PROPERTIES LINKER_LANGUAGE CXX)
 
+# get Version name
+
+execute_process(COMMAND git rev-parse HEAD OUTPUT_VARIABLE VersionName)
+execute_process(COMMAND git branch COMMAND grep "\*" OUTPUT_VARIABLE VersionNameBranch)
+execute_process(COMMAND git tag --points-at HEAD OUTPUT_VARIABLE VersionTag)
+string(LENGTH ${VersionNameBranch} VersionNameBranchLen)
+math(EXPR idx "${VersionNameBranchLen}-3" OUTPUT_FORMAT DECIMAL)
+string(SUBSTRING ${VersionNameBranch} 2 ${idx} VersionNameBranch)
+if ( NOT ${VersionNameBranch} STREQUAL "" )
+    set(VersionName "${VersionNameBranch}-${VersionName}")
+endif()
+if ( NOT ${VersionTag} STREQUAL "" )
+    set(VersionName "${VersionTag}")
+    string(LENGTH ${VersionName} VersionNameLen)
+    math(EXPR idx "${VersionNameLen}-1" OUTPUT_FORMAT DECIMAL)
+    string(SUBSTRING ${VersionName} 0 ${idx} VersionName)
+endif()
+message(STATUS "Building version ${VersionName}")
+
 # Enable Debug mode if required
 
 if ( NOT "${CMAKE_BUILD_TYPE}" )
@@ -33,10 +51,10 @@ if ( NOT "${CMAKE_BUILD_TYPE}" )
 endif()
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     message(STATUS "Building in Debug mode...")
-    target_compile_options(${ExecutableName} PRIVATE -DENABLE_DEBUG -DTRACY_ENABLE -g -ggdb -W -Wall -Wextra -Wno-unused-parameter -fstrict-enums)
+    target_compile_options(${ExecutableName} PRIVATE "-DVERSION_NAME=\"${VersionName}\"" -DENABLE_DEBUG -DTRACY_ENABLE -g -ggdb -W -Wall -Wextra -Wno-unused-parameter -fstrict-enums)
 elseif(${CMAKE_BUILD_TYPE} STREQUAL "Profiling")
     message(STATUS "Building in Profiling mode...")
-    target_compile_options(${ExecutableName} PRIVATE -DTRACY_ENABLE -g -ggdb -W -Wall -Wextra -Wno-unused-parameter -ffold-simple-inlines -fstrict-enums)
+    target_compile_options(${ExecutableName} PRIVATE "-DVERSION_NAME=\"${VersionName}\"" -DTRACY_ENABLE -g -ggdb -W -Wall -Wextra -Wno-unused-parameter -ffold-simple-inlines -fstrict-enums)
 else()
     message(STATUS "Building in Release mode...")
     target_compile_options(${ExecutableName} PRIVATE -g -W -Wall -Wextra -Wno-unused-parameter -ffold-simple-inlines -fstrict-enums)
@@ -104,7 +122,7 @@ if (${Catch2_FOUND})
     )
 
     add_executable(${TestName} ${SRC} build/doctests.cpp)
-    target_compile_options(${TestName} PRIVATE -g -ggdb -DCATCH2 -DCATCH2_VERSION=${Catch2_VERSION_MAJOR} -fstrict-enums)
+    target_compile_options(${TestName} PRIVATE "-DVERSION_NAME=\"${VersionName}\"" -g -ggdb -DCATCH2 -DCATCH2_VERSION=${Catch2_VERSION_MAJOR} -fstrict-enums)
     # NOTE: for tests no compiler warnings are required, since these will be emitted by the main file already
     target_link_libraries(${TestName} PRIVATE Catch2::Catch2WithMain)
 
