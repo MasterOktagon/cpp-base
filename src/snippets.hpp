@@ -46,12 +46,6 @@ typedef long double float80;
 template <typename T, typename... K>
 using callable = T (*)(K...);
 
-// string literal
-#include <string>
-inline std::string operator ""_s (const char* c, usize){
-    return std::string(c);
-}
-
 // catch2 fallback
 #ifndef CATCH2
     #define CONCAT2(a, b) a##b
