@@ -127,6 +127,10 @@ if (${Catch2_FOUND})
 
     # run tests
 
+    include(CTest)
+    include(Catch)
+    catch_discover_tests(tests)
+
     if (NOT (${CMAKE_BUILD_TYPE} STREQUAL "Tests"))
         add_custom_command(TARGET ${TestName}
             POST_BUILD
